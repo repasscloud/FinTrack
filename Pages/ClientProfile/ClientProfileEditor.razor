@@ -1,0 +1,143 @@
+﻿@page "/client/update-add"
+@using FinTrack.Data
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager NavigationManager
+
+<h3>Client Profile Editor</h3>
+
+@if (clients?.Count > 0)
+{
+    <select class="form-control mb-3" @bind="selectedClient" disabled="@isDropdownDisabled">
+        <option value="">-- Select a Client --</option>
+        @foreach (var c in clients)
+        {
+            <option value="@c.Id">@c.EntityName</option>
+        }
+        <option value="new">Create new client (basic)</option>
+    </select>
+
+    <button class="btn btn-primary mb-3" @onclick="SelectAddClient">Select/Add Client</button>
+
+    @if (clientEditorEnabled)
+    {
+        @if (selectedClient == "new")
+        {
+            <h3>New Client</h3>
+            <EditForm Model="client" OnValidSubmit="HandleNewSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="form-group mb-3">
+                    <label for="EntityName">Entity Name</label>
+                    <InputText id="EntityName" @bind-Value="client.EntityName" class="form-control" />
+                    <ValidationMessage For="() => client.EntityName" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="ABN">ABN</label>
+                    <InputText id="ABN" @bind-Value="client.ABN" class="form-control" />
+                    <ValidationMessage For="() => client.ABN" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="ACN">ACN</label>
+                    <InputText id="ACN" @bind-Value="client.ACN" class="form-control" />
+                    <ValidationMessage For="() => client.ACN" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="DirectorsName">Director's Name</label>
+                    <InputText id="DirectorsName" @bind-Value="client.DirectorsName" class="form-control" />
+                    <ValidationMessage For="() => client.DirectorsName" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Add</button>
+            </EditForm>
+        }
+        else
+        {
+            <h3>Edit Client</h3>
+            <EditForm Model="client" OnValidSubmit="HandleUpdateSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="form-group mb-3">
+                    <label for="EntityName">Entity Name</label>
+                    <InputText id="EntityName" @bind-Value="client.EntityName" class="form-control" />
+                    <ValidationMessage For="() => client.EntityName" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="ABN">ABN</label>
+                    <InputText id="ABN" @bind-Value="client.ABN" class="form-control" />
+                    <ValidationMessage For="() => client.ABN" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="ACN">ACN</label>
+                    <InputText id="ACN" @bind-Value="client.ACN" class="form-control" />
+                    <ValidationMessage For="() => client.ACN" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="DirectorsName">Director's Name</label>
+                    <InputText id="DirectorsName" @bind-Value="client.DirectorsName" class="form-control" />
+                    <ValidationMessage For="() => client.DirectorsName" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        }
+    }
+}
+
+@code {
+    [Inject]
+    AppDbContext? AppDbContext { get; set; }
+    private List<BasicClient> clients { get; set; } = new();
+
+    private BasicClient? clientProfile { get; set; }
+    private BasicClient? client { get; set; } = new();
+
+    private string selectedClient = string.Empty;
+
+    private bool clientEditorEnabled = false;
+    private bool isDropdownDisabled = false;
+
+
+    private async void SelectAddClient()
+    {
+        if (!string.IsNullOrEmpty(selectedClient) && selectedClient == "new")
+        {
+            clientEditorEnabled = true;
+            isDropdownDisabled = true;
+        }
+        else if (!string.IsNullOrEmpty(selectedClient) && selectedClient != "new")
+        {
+            client = await AppDbContext!.BasicClients.FindAsync(int.Parse(selectedClient));
+            clientEditorEnabled = true;
+            isDropdownDisabled = true;
+        }
+    }
+
+    private async Task HandleNewSubmit()
+    {
+        client!.Id = 0;
+        AppDbContext!.BasicClients.Add(client);
+        await AppDbContext.SaveChangesAsync();
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async Task HandleUpdateSubmit()
+    {
+        AppDbContext!.Entry(client).State = EntityState.Modified;
+
+        await AppDbContext.SaveChangesAsync();
+        NavigationManager.NavigateTo("/");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        clients = await AppDbContext!.BasicClients.ToListAsync();
+    }
+}
+

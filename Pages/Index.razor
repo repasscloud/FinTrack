@@ -1,0 +1,94 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Forms
+@using FinTrack.Data
+@using Microsoft.EntityFrameworkCore
+@inject IJSRuntime JSRuntime
+
+<h1>FinTrack Report Builder</h1>
+
+@if (!fileUploaderEnabled)
+{
+    @if (clients?.Count > 0)
+    {
+        <select class="form-control mb-3" @bind="selectedClient" disabled="@isDropdownDisabled">
+            <option value="">-- Select a Client --</option>
+            @foreach (var c in clients)
+            {
+                <option value="@c.Id">@c.EntityName</option>
+            }
+        </select>
+
+        <button class="btn btn-primary mb-3" @onclick="SelectClient">Select Client</button>
+
+    }
+}
+
+@if (fileUploaderEnabled)
+{
+    <div class="mb-3">
+        <InputFile accept=".xlsx" OnChange="HandleFileUpload" />
+    </div>
+}
+
+@if (uploadedFile != null)
+{
+    <p>Uploaded file: @uploadedFile.Name</p>
+    <button class="btn btn-primary" @onclick="ProcessFile">Process File</button>
+}
+
+@code {
+    [Inject]
+    AppDbContext? AppDbContext { get; set; }
+    private List<BasicClient> clients { get; set; } = new();
+    private BasicClient client { get; set; } = new();
+    private string selectedClient = string.Empty;
+    private bool isDropdownDisabled = false;
+    private bool fileUploaderEnabled = false;
+
+    private async void SelectClient()
+    {
+        if (!string.IsNullOrEmpty(selectedClient))
+        {
+            client = await AppDbContext!.BasicClients.FindAsync(int.Parse(selectedClient));
+            fileUploaderEnabled = true;
+            isDropdownDisabled = true;
+        }
+    }
+
+    private IBrowserFile uploadedFile;
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles().FirstOrDefault();
+
+        // Check if the file has a valid extension (in this case, .xlsx)
+        if (file != null && file.Name.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            uploadedFile = file;
+        }
+        else
+        {
+            // Handle invalid file format here, or provide a message to the user.
+            // For example: Show an error message to the user.
+        }
+    }
+
+    private async Task ProcessFile()
+    {
+        if (uploadedFile != null)
+        {
+            using var stream = uploadedFile.OpenReadStream();
+            // Process the XLSX file using the 'stream'
+            // You can read, parse, or perform any necessary operations on the file data here.
+
+            // After processing, you can navigate to another page if needed.
+            // Example: await JSRuntime.InvokeVoidAsync("openPage", "/result");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        clients = await AppDbContext!.BasicClients.ToListAsync();
+    }
+}
